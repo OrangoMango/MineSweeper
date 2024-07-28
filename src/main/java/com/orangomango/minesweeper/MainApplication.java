@@ -16,12 +16,16 @@ public class MainApplication extends Application{
 	private static final int WIDTH = 600;
 	private static final int HEIGHT = 750;
 	private static final int OFFSET_X = 50;
-	private static final int OFFSET_Y = 140;
+	private static final int OFFSET_Y = 170;
 
 	private Map map;
 	private boolean firstClick;
 	private boolean showMines;
 	private HashMap<KeyCode, Boolean> keys = new HashMap<>();
+	private Display timer, mineCount;
+	private volatile int timerCount = 0;
+	private int totalMines;
+	private boolean gameRunning = false;
 
 	@Override
 	public void start(Stage stage){
@@ -31,15 +35,40 @@ public class MainApplication extends Application{
 		pane.getChildren().add(canvas);
 
 		this.map = new Map(20, 20);
+		this.timer = new Display(370, 20, 3, -1);
+		this.mineCount = new Display(50, 20, 3, -1);
+
+		Thread timerThread = new Thread(() -> {
+			while (true){
+				try {
+					if (this.gameRunning){
+						this.timer.update(this.timerCount);
+						this.timerCount++;
+						Thread.sleep(1000);
+					} else {
+						Thread.sleep(50);
+					}
+				} catch (InterruptedException ex){
+					ex.printStackTrace();
+				}
+			}
+		});
+		timerThread.setDaemon(true);
+		timerThread.start();
 
 		canvas.setOnMousePressed(e -> {
 			final int cellX = (int)((e.getX()-OFFSET_X)/Cell.SIZE);
 			final int cellY = (int)((e.getY()-OFFSET_Y)/Cell.SIZE);
 			Cell cell = this.map.getCellAt(cellX, cellY);
 
+			if (!this.gameRunning && this.firstClick) return;
+
 			if (cell != null){
 				if (!this.firstClick){
-					this.map.buildMines(cellX, cellY);
+					int numMines = this.map.buildMines(cellX, cellY);
+					this.totalMines = numMines;
+					this.mineCount.update(this.totalMines);
+					this.gameRunning = true;
 				}
 				this.firstClick = true;
 				if (e.getButton() == MouseButton.PRIMARY){
@@ -60,6 +89,7 @@ public class MainApplication extends Application{
 									Cell c = this.map.getCellAt(i, j);
 									if (!c.isFlag()){
 										if (c.isMine()){
+											c.setGameOverCell();
 											gameOver();
 										} else {
 											c.reveal(this.map);
@@ -69,17 +99,31 @@ public class MainApplication extends Application{
 							}
 						}
 					} else {
-						if (cell.isFlag()) cell.toggleFlag();
+						if (cell.isFlag()){
+							cell.toggleFlag();
+							this.totalMines++;
+							this.mineCount.update(this.totalMines);
+						}
 						boolean gameOver = cell.reveal(this.map);
-						if (gameOver) gameOver();
+						if (gameOver){
+							cell.setGameOverCell();
+							gameOver();
+						}
 					}				
 				} else if (e.getButton() == MouseButton.SECONDARY){
 					cell.toggleFlag();
+					if (cell.isFlag()){
+						this.totalMines--;
+					} else {
+						this.totalMines++;
+					}
+					this.mineCount.update(this.totalMines);
 				}
 
 				// Check if the game is finished
 				if (this.map.isFinished()){
 					System.out.println("YOU WIN");
+					this.gameRunning = false;
 				}
 			}
 		});
@@ -106,6 +150,7 @@ public class MainApplication extends Application{
 	private void gameOver(){
 		System.out.println("GAME OVER");
 		this.showMines = true;
+		this.gameRunning = false;
 	}
 
 	private void update(GraphicsContext gc){
@@ -119,12 +164,21 @@ public class MainApplication extends Application{
 		} else if (this.keys.getOrDefault(KeyCode.R, false)){
 			this.map = new Map(20, 20);
 			this.firstClick = false;
+			this.showMines = false;
+			this.timer.update(-1);
+			this.mineCount.update(-1);
+			this.timerCount = 0;
+			this.totalMines = 0;
+			this.gameRunning = false;
 			this.keys.put(KeyCode.R, false);
 		}
 
 		gc.translate(OFFSET_X, OFFSET_Y);
 		this.map.render(gc, this.showMines);
 		gc.translate(-OFFSET_X, -OFFSET_Y);
+
+		this.timer.render(gc);
+		this.mineCount.render(gc);
 	}
 
 	public static void main(String[] args){

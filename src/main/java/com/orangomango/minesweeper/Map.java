@@ -18,14 +18,20 @@ public class Map{
 		}
 	}
 
-	public void buildMines(int x, int y){
+	public int buildMines(int x, int y){
+		int count = 0;
 		for (int i = 0; i < this.w; i++){
 			for (int j = 0; j < this.h; j++){
 				if (!inArea(i, j, x, y)){
 					this.map[i][j].setMine(Math.random() < 0.2);
+					if (this.map[i][j].isMine()){
+						count++;
+					}
 				}
 			}
 		}
+
+		return count;
 	}
 
 	private boolean inArea(int x, int y, int ax, int ay){

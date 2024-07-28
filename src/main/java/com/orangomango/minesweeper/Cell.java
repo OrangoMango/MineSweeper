@@ -9,6 +9,7 @@ public class Cell{
 	private boolean mine;
 	private int revealed = -1;
 	private boolean flag = false;
+	private boolean gameOverCell;
 
 	public static final double SIZE = 25;
 	private static final Image IMAGE = new Image(Cell.class.getResourceAsStream("/cell.png"));
@@ -38,6 +39,10 @@ public class Cell{
 
 	public void setMine(boolean value){
 		this.mine = value;
+	}
+
+	public void setGameOverCell(){
+		this.gameOverCell = true;
 	}
 
 	public boolean reveal(Map map){
@@ -75,14 +80,18 @@ public class Cell{
 		int frameIndex = 0;
 
 		if (this.flag){
-			frameIndex = 11;
+			frameIndex = 12;
 			if (!this.mine && showMines){
-				frameIndex = 12;
+				frameIndex = 13;
 			}
 		} else if (this.mine){
 			if (showMines) frameIndex = 10;
 		} else if (this.revealed >= 0){
 			frameIndex = this.revealed+1;
+		}
+
+		if (this.gameOverCell){
+			frameIndex = 11;
 		}
 
 		gc.drawImage(IMAGE, 1+frameIndex*22, 1, 20, 20, this.x*SIZE, this.y*SIZE, SIZE, SIZE);
