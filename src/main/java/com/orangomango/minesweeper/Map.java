@@ -21,11 +21,28 @@ public class Map{
 	public void buildMines(int x, int y){
 		for (int i = 0; i < this.w; i++){
 			for (int j = 0; j < this.h; j++){
-				if (i != x || j != y){
+				if (!inArea(i, j, x, y)){
 					this.map[i][j].setMine(Math.random() < 0.2);
 				}
 			}
 		}
+	}
+
+	private boolean inArea(int x, int y, int ax, int ay){
+		return x >= ax-1 && x <= ax+1 && y >= ay-1 && y <= ay+1;
+	}
+
+	public boolean isFinished(){
+		for (int i = 0; i < this.w; i++){
+			for (int j = 0; j < this.h; j++){
+				Cell cell = this.map[i][j];
+				if ((cell.getRevealed() == -1 && !cell.isMine()) || (cell.isMine() && !cell.isFlag())){
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 
 	public Cell getCellAt(int x, int y){
@@ -36,11 +53,11 @@ public class Map{
 		}
 	}
 
-	public void render(GraphicsContext gc){
+	public void render(GraphicsContext gc, boolean showMines){
 		for (int i = 0; i < this.w; i++){
 			for (int j = 0; j < this.h; j++){
 				Cell cell = this.map[i][j];
-				cell.render(gc);
+				cell.render(gc, showMines);
 			}
 		}
 	}

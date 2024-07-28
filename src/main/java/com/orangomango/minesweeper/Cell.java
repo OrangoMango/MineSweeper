@@ -20,6 +20,7 @@ public class Cell{
 	}
 
 	public void toggleFlag(){
+		if (this.revealed != -1) return;
 		this.flag = !this.flag;
 	}
 
@@ -70,15 +71,18 @@ public class Cell{
 		return false;
 	}
 
-	public void render(GraphicsContext gc){
+	public void render(GraphicsContext gc, boolean showMines){
 		int frameIndex = 0;
 
-		if (this.revealed > 0){
-			frameIndex = this.revealed;
-		} else if (this.flag){
-			frameIndex = 10;
+		if (this.flag){
+			frameIndex = 11;
+			if (!this.mine && showMines){
+				frameIndex = 12;
+			}
 		} else if (this.mine){
-			//frameIndex = 9;
+			if (showMines) frameIndex = 10;
+		} else if (this.revealed >= 0){
+			frameIndex = this.revealed+1;
 		}
 
 		gc.drawImage(IMAGE, 1+frameIndex*22, 1, 20, 20, this.x*SIZE, this.y*SIZE, SIZE, SIZE);

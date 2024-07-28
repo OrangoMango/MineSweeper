@@ -8,6 +8,9 @@ import javafx.scene.canvas.*;
 import javafx.scene.paint.Color;
 import javafx.animation.*;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.KeyCode;
+
+import java.util.HashMap;
 
 public class MainApplication extends Application{
 	private static final int WIDTH = 600;
@@ -17,6 +20,8 @@ public class MainApplication extends Application{
 
 	private Map map;
 	private boolean firstClick;
+	private boolean showMines;
+	private HashMap<KeyCode, Boolean> keys = new HashMap<>();
 
 	@Override
 	public void start(Stage stage){
@@ -71,8 +76,17 @@ public class MainApplication extends Application{
 				} else if (e.getButton() == MouseButton.SECONDARY){
 					cell.toggleFlag();
 				}
+
+				// Check if the game is finished
+				if (this.map.isFinished()){
+					System.out.println("YOU WIN");
+				}
 			}
 		});
+
+		canvas.setFocusTraversable(true);
+		canvas.setOnKeyPressed(e -> this.keys.put(e.getCode(), true));
+		canvas.setOnKeyReleased(e -> this.keys.put(e.getCode(), false));
 
 		AnimationTimer loop = new AnimationTimer(){
 			@Override
@@ -91,6 +105,7 @@ public class MainApplication extends Application{
 
 	private void gameOver(){
 		System.out.println("GAME OVER");
+		this.showMines = true;
 	}
 
 	private void update(GraphicsContext gc){
@@ -98,8 +113,17 @@ public class MainApplication extends Application{
 		gc.setFill(Color.BLACK);
 		gc.fillRect(0, 0, WIDTH, HEIGHT);
 
+		if (this.keys.getOrDefault(KeyCode.F1, false)){
+			this.showMines = !this.showMines;
+			this.keys.put(KeyCode.F1, false);
+		} else if (this.keys.getOrDefault(KeyCode.R, false)){
+			this.map = new Map(20, 20);
+			this.firstClick = false;
+			this.keys.put(KeyCode.R, false);
+		}
+
 		gc.translate(OFFSET_X, OFFSET_Y);
-		this.map.render(gc);
+		this.map.render(gc, this.showMines);
 		gc.translate(-OFFSET_X, -OFFSET_Y);
 	}
 
