@@ -9,6 +9,7 @@ import javafx.scene.paint.Color;
 import javafx.animation.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.KeyCode;
+import javafx.geometry.Point2D;
 
 import java.util.HashMap;
 
@@ -28,6 +29,7 @@ public class MainApplication extends Application{
 	private boolean gameRunning = false;
 	private double offsetX, offsetY, dragX = -1, dragY = -1;
 	private int lastFlagX = -1, lastFlagY = -1;
+	private Solver solver;
 
 	@Override
 	public void start(Stage stage){
@@ -39,6 +41,8 @@ public class MainApplication extends Application{
 		this.map = new Map(25, 25);
 		this.timer = new Display(50, 20, 3, -1);
 		this.mineCount = new Display(350, 20, 3, -1);
+
+		this.solver = new Solver(this.map);
 
 		Thread timerThread = new Thread(() -> {
 			while (true){
@@ -68,11 +72,7 @@ public class MainApplication extends Application{
 			if (cell != null){
 				if (e.getButton() == MouseButton.PRIMARY){
 					if (!this.firstClick){
-						int numMines = this.map.buildMines(cellX, cellY);
-						this.totalMines = numMines;
-						this.mineCount.update(this.totalMines);
-						this.gameRunning = true;
-						this.firstClick = true;
+						startGame(cellX, cellY);
 					}
 
 					if (cell.getRevealed() > 0){
@@ -129,8 +129,7 @@ public class MainApplication extends Application{
 
 				// Check if the game is finished
 				if (this.map.isFinished()){
-					System.out.println("YOU WIN");
-					this.gameRunning = false;
+					gameWon();
 				}
 			}
 		});
@@ -205,6 +204,19 @@ public class MainApplication extends Application{
 		this.gameRunning = false;
 	}
 
+	private void gameWon(){
+		System.out.println("YOU WIN");
+		this.gameRunning = false;
+	}
+
+	private void startGame(int cellX, int cellY){
+		int numMines = this.map.buildMines(cellX, cellY);
+		this.totalMines = numMines;
+		this.mineCount.update(this.totalMines);
+		this.gameRunning = true;
+		this.firstClick = true;
+	}
+
 	private void update(GraphicsContext gc){
 		gc.clearRect(0, 0, WIDTH, HEIGHT);
 		gc.setFill(Color.BLACK);
@@ -215,6 +227,7 @@ public class MainApplication extends Application{
 			this.keys.put(KeyCode.F1, false);
 		} else if (this.keys.getOrDefault(KeyCode.R, false)){
 			this.map = new Map(this.map.getWidth(), this.map.getHeight());
+			this.solver.setMap(this.map);
 			this.firstClick = false;
 			this.showMines = false;
 			this.timer.update(-1);
@@ -223,6 +236,23 @@ public class MainApplication extends Application{
 			this.totalMines = 0;
 			this.gameRunning = false;
 			this.keys.put(KeyCode.R, false);
+		} else if (this.keys.getOrDefault(KeyCode.SPACE, false)){
+			if (this.gameRunning || !this.firstClick){
+				Point2D rnd = this.solver.solveStep();
+				if (rnd.getY() != -1){
+					startGame((int)rnd.getX(), (int)rnd.getY());
+					this.map.getCellAt((int)rnd.getX(), (int)rnd.getY()).reveal(this.map);
+				} else {
+					this.totalMines -= (int)rnd.getX();
+					this.mineCount.update(this.totalMines);
+				}
+
+				if (this.map.isFinished()){
+					gameWon();
+				}
+			}
+
+			this.keys.put(KeyCode.SPACE, false);
 		}
 
 		gc.translate(OFFSET_X+this.offsetX, OFFSET_Y+this.offsetY);
