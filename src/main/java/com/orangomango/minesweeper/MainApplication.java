@@ -167,6 +167,8 @@ public class MainApplication extends Application{
 		canvas.setOnMouseReleased(e -> {
 			this.dragX = -1;
 			this.dragY = -1;
+			this.lastFlagX = -1;
+			this.lastFlagY = -1;
 		});
 
 		canvas.setOnScroll(e -> {
