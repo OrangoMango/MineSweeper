@@ -29,6 +29,11 @@ public class Display{
 			String numString = Integer.toString(num);
 			if (numString.length() < this.digits.length){
 				numString = "0".repeat(this.digits.length-numString.length())+numString;
+			} else if (numString.length() > this.digits.length){
+				this.digits = new DigitDisplay[numString.length()];
+				for (int i = 0; i < numString.length(); i++){
+					this.digits[i] = new DigitDisplay(-1);
+				}
 			}
 
 			for (int i = 0; i < this.digits.length; i++){
@@ -40,7 +45,7 @@ public class Display{
 	public void render(GraphicsContext gc){
 		for (int i = 0; i < this.digits.length; i++){
 			DigitDisplay display = this.digits[i];
-			display.render(gc, this.x+DigitDisplay.WIDTH*i, this.y);
+			display.render(gc, this.x+(DigitDisplay.WIDTH+5)*i, this.y);
 		}
 	}
 }

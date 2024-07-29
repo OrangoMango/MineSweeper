@@ -11,7 +11,7 @@ public class Cell{
 	private boolean flag = false;
 	private boolean gameOverCell;
 
-	public static final double SIZE = 25;
+	public static double SIZE = 25;
 	private static final Image IMAGE = new Image(Cell.class.getResourceAsStream("/cell.png"));
 
 	public Cell(int x, int y, boolean mine){

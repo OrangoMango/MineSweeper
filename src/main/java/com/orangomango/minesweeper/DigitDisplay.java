@@ -6,7 +6,7 @@ import javafx.scene.image.Image;
 public class DigitDisplay{
 	private int digit = -1;
 
-	public static final double WIDTH = 60;
+	public static final double WIDTH = 40;
 	private static final Image IMAGE = new Image(Cell.class.getResourceAsStream("/display.png"));
 
 	public DigitDisplay(int num){

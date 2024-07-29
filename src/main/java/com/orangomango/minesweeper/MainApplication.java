@@ -13,10 +13,10 @@ import javafx.scene.input.KeyCode;
 import java.util.HashMap;
 
 public class MainApplication extends Application{
-	private static final int WIDTH = 600;
-	private static final int HEIGHT = 750;
+	private static final int WIDTH = 750;
+	private static final int HEIGHT = 800;
 	private static final int OFFSET_X = 50;
-	private static final int OFFSET_Y = 170;
+	private static final int OFFSET_Y = 130;
 
 	private Map map;
 	private boolean firstClick;
@@ -26,6 +26,8 @@ public class MainApplication extends Application{
 	private volatile int timerCount = 0;
 	private int totalMines;
 	private boolean gameRunning = false;
+	private double offsetX, offsetY, dragX = -1, dragY = -1;
+	private int lastFlagX = -1, lastFlagY = -1;
 
 	@Override
 	public void start(Stage stage){
@@ -34,9 +36,9 @@ public class MainApplication extends Application{
 		GraphicsContext gc = canvas.getGraphicsContext2D();
 		pane.getChildren().add(canvas);
 
-		this.map = new Map(20, 20);
-		this.timer = new Display(370, 20, 3, -1);
-		this.mineCount = new Display(50, 20, 3, -1);
+		this.map = new Map(25, 25);
+		this.timer = new Display(50, 20, 3, -1);
+		this.mineCount = new Display(350, 20, 3, -1);
 
 		Thread timerThread = new Thread(() -> {
 			while (true){
@@ -57,21 +59,22 @@ public class MainApplication extends Application{
 		timerThread.start();
 
 		canvas.setOnMousePressed(e -> {
-			final int cellX = (int)((e.getX()-OFFSET_X)/Cell.SIZE);
-			final int cellY = (int)((e.getY()-OFFSET_Y)/Cell.SIZE);
+			final int cellX = (int)((e.getX()-OFFSET_X-this.offsetX)/Cell.SIZE);
+			final int cellY = (int)((e.getY()-OFFSET_Y-this.offsetY)/Cell.SIZE);
 			Cell cell = this.map.getCellAt(cellX, cellY);
 
 			if (!this.gameRunning && this.firstClick) return;
 
 			if (cell != null){
-				if (!this.firstClick){
-					int numMines = this.map.buildMines(cellX, cellY);
-					this.totalMines = numMines;
-					this.mineCount.update(this.totalMines);
-					this.gameRunning = true;
-				}
-				this.firstClick = true;
 				if (e.getButton() == MouseButton.PRIMARY){
+					if (!this.firstClick){
+						int numMines = this.map.buildMines(cellX, cellY);
+						this.totalMines = numMines;
+						this.mineCount.update(this.totalMines);
+						this.gameRunning = true;
+						this.firstClick = true;
+					}
+
 					if (cell.getRevealed() > 0){
 						int flagCells = 0;
 						for (int i = Math.max(cellX-1, 0); i < Math.min(cellX+2, this.map.getWidth()); i++){
@@ -89,7 +92,6 @@ public class MainApplication extends Application{
 									Cell c = this.map.getCellAt(i, j);
 									if (!c.isFlag()){
 										if (c.isMine()){
-											c.setGameOverCell();
 											gameOver();
 										} else {
 											c.reveal(this.map);
@@ -111,13 +113,18 @@ public class MainApplication extends Application{
 						}
 					}				
 				} else if (e.getButton() == MouseButton.SECONDARY){
-					cell.toggleFlag();
-					if (cell.isFlag()){
-						this.totalMines--;
-					} else {
-						this.totalMines++;
+					if (this.firstClick){
+						cell.toggleFlag();
+						if (cell.isFlag()){
+							this.totalMines--;
+						} else {
+							this.totalMines++;
+						}
+						this.mineCount.update(this.totalMines);
+
+						this.lastFlagX = cellX;
+						this.lastFlagY = cellY;
 					}
-					this.mineCount.update(this.totalMines);
 				}
 
 				// Check if the game is finished
@@ -126,6 +133,51 @@ public class MainApplication extends Application{
 					this.gameRunning = false;
 				}
 			}
+		});
+
+		canvas.setOnScroll(e -> {
+			if (e.getDeltaY() > 0){
+				Cell.SIZE += 2;
+			} else if (e.getDeltaY() < 0){
+				Cell.SIZE -= 2;
+			}
+		});
+
+		canvas.setOnMouseDragged(e -> {
+			if (e.getButton() == MouseButton.SECONDARY){
+				if (this.dragX == -1 && this.dragY == -1){
+					this.dragX = e.getX();
+					this.dragY = e.getY();
+				} else {
+					this.offsetX += e.getX()-this.dragX;
+					this.offsetY += e.getY()-this.dragY;
+					this.dragX = e.getX();
+					this.dragY = e.getY();
+				}
+
+				if (this.lastFlagX != -1 && this.lastFlagY != -1){ // Fix wrong flag while dragging
+					this.map.getCellAt(this.lastFlagX, this.lastFlagY).toggleFlag();
+					this.totalMines++;
+					this.mineCount.update(this.totalMines);
+					this.lastFlagX = -1;
+					this.lastFlagY = -1;
+				}
+			}
+		});
+
+		canvas.setOnMouseReleased(e -> {
+			this.dragX = -1;
+			this.dragY = -1;
+		});
+
+		canvas.setOnScroll(e -> {
+			if (e.getDeltaY() > 0){
+				Cell.SIZE += 2;
+			} else if (e.getDeltaY() < 0){
+				Cell.SIZE -= 2;
+			}
+
+			Cell.SIZE = Math.max(1, Math.min(100, Cell.SIZE));
 		});
 
 		canvas.setFocusTraversable(true);
@@ -162,7 +214,7 @@ public class MainApplication extends Application{
 			this.showMines = !this.showMines;
 			this.keys.put(KeyCode.F1, false);
 		} else if (this.keys.getOrDefault(KeyCode.R, false)){
-			this.map = new Map(20, 20);
+			this.map = new Map(this.map.getWidth(), this.map.getHeight());
 			this.firstClick = false;
 			this.showMines = false;
 			this.timer.update(-1);
@@ -173,10 +225,12 @@ public class MainApplication extends Application{
 			this.keys.put(KeyCode.R, false);
 		}
 
-		gc.translate(OFFSET_X, OFFSET_Y);
+		gc.translate(OFFSET_X+this.offsetX, OFFSET_Y+this.offsetY);
 		this.map.render(gc, this.showMines);
-		gc.translate(-OFFSET_X, -OFFSET_Y);
+		gc.translate(-OFFSET_X-this.offsetX, -OFFSET_Y-this.offsetY);
 
+		gc.setFill(Color.BLACK);
+		gc.fillRect(0, 0, WIDTH, 120);
 		this.timer.render(gc);
 		this.mineCount.render(gc);
 	}
