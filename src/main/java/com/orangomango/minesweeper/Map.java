@@ -20,9 +20,9 @@ public class Map{
 
 	public int buildMines(int x, int y){
 		// DEBUG
-		long seed = 1722245027480L; //System.currentTimeMillis();
+		long seed = System.currentTimeMillis(); // 1722245027480L;
 		java.util.Random random = new java.util.Random(seed);
-		//System.out.println("SEED: "+seed);
+		System.out.println("MAP_SEED: "+seed);
 
 		int count = 0;
 		for (int i = 0; i < this.w; i++){

@@ -240,7 +240,8 @@ public class MainApplication extends Application{
 			this.keys.put(KeyCode.R, false);
 		} else if (this.keys.getOrDefault(KeyCode.SPACE, false)){
 			if (this.gameRunning || !this.firstClick){
-				Point2D rnd = this.solver.solveStep();
+				System.out.println("Running solver...");
+				Point2D rnd = this.solver.solveStep(this.totalMines);
 				if (rnd.getY() != -1){
 					startGame((int)rnd.getX(), (int)rnd.getY());
 					this.map.getCellAt((int)rnd.getX(), (int)rnd.getY()).reveal(this.map);

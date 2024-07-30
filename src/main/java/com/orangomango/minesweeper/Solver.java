@@ -19,7 +19,7 @@ public class Solver{
 		this.map = map;
 	}
 
-	public Point2D solveStep(){
+	public Point2D solveStep(int minesAvailable){
 		if (STOP) return new Point2D(0, -1);
 		int count = 0;
 		boolean actionPerformed = false;
@@ -51,9 +51,9 @@ public class Solver{
 
 		if (count == 0){
 			// DEBUG
-			long seed = 1722245027457L; //System.currentTimeMillis();
+			long seed = System.currentTimeMillis(); // 1722245027457L;
 			Random random = new Random(seed);
-			//System.out.println("SEED: "+seed);
+			System.out.println("SOLVER_SEED: "+seed);
 
 			int rx = random.nextInt(this.map.getWidth());
 			int ry = random.nextInt(this.map.getHeight());
@@ -63,12 +63,11 @@ public class Solver{
 		if (!actionPerformed){
 			System.out.println("NO :(");
 			AmbiguousSolver solver = new AmbiguousSolver(this.map);
-			solver.solve();
-			System.out.println(solver);
+			solver.solve(minesAvailable);
 
 			flagsRaised = solver.apply(this.map);
 
-			STOP = true;
+			//STOP = true;
 		}
 
 		return new Point2D(flagsRaised, -1); // Small hack :)
