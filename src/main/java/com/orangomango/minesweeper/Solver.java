@@ -73,9 +73,11 @@ public class Solver{
 			} else {
 				System.out.println("NO :(");
 				AmbiguousSolver solver = new AmbiguousSolver(this.map);
-				solver.solve(minesAvailable);
+				boolean as = solver.solve(minesAvailable);
 
 				flagsRaised = solver.apply(this.map);
+
+				if (!as) return null;
 			}
 
 			//STOP = true;

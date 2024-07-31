@@ -41,7 +41,7 @@ public class MainApplication extends Application{
 		GraphicsContext gc = canvas.getGraphicsContext2D();
 		pane.getChildren().add(canvas);
 
-		this.map = new Map(45, 45);
+		this.map = new Map(55, 55);
 		this.timer = new Display(50, 20, 3, -1);
 		this.mineCount = new Display(350, 20, 3, -1);
 
@@ -259,17 +259,21 @@ public class MainApplication extends Application{
 							try {
 								System.out.println("Running solver...");
 								Point2D rnd = this.solver.solveStep(this.totalMines);
-								if (rnd.getY() != -1){
-									startGame((int)rnd.getX(), (int)rnd.getY());
-									this.map.getCellAt((int)rnd.getX(), (int)rnd.getY()).reveal(this.map);
+								if (rnd == null){
+									THREAD_RUNNING = false;
 								} else {
-									this.totalMines -= (int)rnd.getX();
-									this.mineCount.update(this.totalMines);
-								}
+									if (rnd.getY() != -1){
+										startGame((int)rnd.getX(), (int)rnd.getY());
+										this.map.getCellAt((int)rnd.getX(), (int)rnd.getY()).reveal(this.map);
+									} else {
+										this.totalMines -= (int)rnd.getX();
+										this.mineCount.update(this.totalMines);
+									}
 
-								if (this.map.isFinished()){
-									gameWon();
-									break;
+									if (this.map.isFinished()){
+										gameWon();
+										break;
+									}
 								}
 
 								Thread.sleep(250);
@@ -277,7 +281,7 @@ public class MainApplication extends Application{
 								ex.printStackTrace();
 							}
 						}
-						System.out.println("Solver finished");
+						System.out.println("Solver finished "+(this.map.isFinished() ? "(Game won)" : "(Need to guess)"));
 					}).start();
 				}
 			}
