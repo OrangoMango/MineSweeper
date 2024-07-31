@@ -31,6 +31,9 @@ public class MainApplication extends Application{
 	private int lastFlagX = -1, lastFlagY = -1;
 	private Solver solver;
 
+	public static volatile String DEBUG_INFO = "";
+	private static volatile boolean THREAD_RUNNING = false;
+
 	@Override
 	public void start(Stage stage){
 		StackPane pane = new StackPane();
@@ -38,7 +41,7 @@ public class MainApplication extends Application{
 		GraphicsContext gc = canvas.getGraphicsContext2D();
 		pane.getChildren().add(canvas);
 
-		this.map = new Map(25, 25);
+		this.map = new Map(45, 45);
 		this.timer = new Display(50, 20, 3, -1);
 		this.mineCount = new Display(350, 20, 3, -1);
 
@@ -114,16 +117,18 @@ public class MainApplication extends Application{
 					}				
 				} else if (e.getButton() == MouseButton.SECONDARY){
 					if (this.firstClick){
-						cell.toggleFlag();
-						if (cell.isFlag()){
-							this.totalMines--;
-						} else {
-							this.totalMines++;
-						}
-						this.mineCount.update(this.totalMines);
+						if (cell.getRevealed() == -1){
+							cell.toggleFlag();
+							if (cell.isFlag()){
+								this.totalMines--;
+							} else {
+								this.totalMines++;
+							}
+							this.mineCount.update(this.totalMines);
 
-						this.lastFlagX = cellX;
-						this.lastFlagY = cellY;
+							this.lastFlagX = cellX;
+							this.lastFlagY = cellY;
+						}
 					}
 				}
 
@@ -155,8 +160,13 @@ public class MainApplication extends Application{
 				}
 
 				if (this.lastFlagX != -1 && this.lastFlagY != -1){ // Fix wrong flag while dragging
-					this.map.getCellAt(this.lastFlagX, this.lastFlagY).toggleFlag();
-					this.totalMines++;
+					Cell c = this.map.getCellAt(this.lastFlagX, this.lastFlagY);
+					c.toggleFlag();
+					if (c.isFlag()){
+						this.totalMines--;
+					} else {
+						this.totalMines++;
+					}
 					this.mineCount.update(this.totalMines);
 					this.lastFlagX = -1;
 					this.lastFlagY = -1;
@@ -239,19 +249,36 @@ public class MainApplication extends Application{
 			this.gameRunning = false;
 			this.keys.put(KeyCode.R, false);
 		} else if (this.keys.getOrDefault(KeyCode.SPACE, false)){
-			if (this.gameRunning || !this.firstClick){
-				System.out.println("Running solver...");
-				Point2D rnd = this.solver.solveStep(this.totalMines);
-				if (rnd.getY() != -1){
-					startGame((int)rnd.getX(), (int)rnd.getY());
-					this.map.getCellAt((int)rnd.getX(), (int)rnd.getY()).reveal(this.map);
-				} else {
-					this.totalMines -= (int)rnd.getX();
-					this.mineCount.update(this.totalMines);
-				}
+			if (THREAD_RUNNING){
+				THREAD_RUNNING = false;
+			} else {
+				if (this.gameRunning || !this.firstClick){
+					THREAD_RUNNING = true;
+					new Thread(() -> {
+						while (THREAD_RUNNING){
+							try {
+								System.out.println("Running solver...");
+								Point2D rnd = this.solver.solveStep(this.totalMines);
+								if (rnd.getY() != -1){
+									startGame((int)rnd.getX(), (int)rnd.getY());
+									this.map.getCellAt((int)rnd.getX(), (int)rnd.getY()).reveal(this.map);
+								} else {
+									this.totalMines -= (int)rnd.getX();
+									this.mineCount.update(this.totalMines);
+								}
 
-				if (this.map.isFinished()){
-					gameWon();
+								if (this.map.isFinished()){
+									gameWon();
+									break;
+								}
+
+								Thread.sleep(250);
+							} catch (InterruptedException ex){
+								ex.printStackTrace();
+							}
+						}
+						System.out.println("Solver finished");
+					}).start();
 				}
 			}
 
@@ -266,6 +293,9 @@ public class MainApplication extends Application{
 		gc.fillRect(0, 0, WIDTH, 120);
 		this.timer.render(gc);
 		this.mineCount.render(gc);
+
+		gc.setFill(Color.GREEN);
+		gc.fillText(DEBUG_INFO, 550, 30);
 	}
 
 	public static void main(String[] args){

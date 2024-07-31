@@ -61,11 +61,22 @@ public class Solver{
 		}
 
 		if (!actionPerformed){
-			System.out.println("NO :(");
-			AmbiguousSolver solver = new AmbiguousSolver(this.map);
-			solver.solve(minesAvailable);
+			if (minesAvailable == 0){
+				for (int i = 0; i < this.map.getWidth(); i++){
+					for (int j = 0; j < this.map.getHeight(); j++){
+						Cell cell = this.map.getCellAt(i, j);
+						if (cell.getRevealed() == -1){
+							cell.reveal(this.map);
+						}
+					}
+				}
+			} else {
+				System.out.println("NO :(");
+				AmbiguousSolver solver = new AmbiguousSolver(this.map);
+				solver.solve(minesAvailable);
 
-			flagsRaised = solver.apply(this.map);
+				flagsRaised = solver.apply(this.map);
+			}
 
 			//STOP = true;
 		}
