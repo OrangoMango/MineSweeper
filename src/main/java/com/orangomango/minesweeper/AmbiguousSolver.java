@@ -60,8 +60,6 @@ public class AmbiguousSolver{
 			}
 		}
 
-		System.out.println("ac: "+availableCells+", "+availableCells.size());
-
 		// Build current flags map
 		for (Point2D p : availableCells){
 			flagMap[(int)p.getX()][(int)p.getY()] = countFlags(this.world, (int)p.getX(), (int)p.getY());
@@ -76,8 +74,6 @@ public class AmbiguousSolver{
 			}
 		}
 
-		System.out.println("poss: "+possibilities+", "+possibilities.size());
-
 		// Divide possibilities into groups
 		ArrayList<Point2D> currentList = new ArrayList<>();
 		currentList.add(possibilities.remove(0));
@@ -87,7 +83,7 @@ public class AmbiguousSolver{
 			poss_loop:
 			for (Point2D p : possibilities){
 				for (Point2D someElement : currentList){
-					if (Math.abs(p.getX()-someElement.getX()) <= 1 && Math.abs(p.getY()-someElement.getY()) <= 1){
+					if (Math.abs(p.getX()-someElement.getX()) <= 2 && Math.abs(p.getY()-someElement.getY()) <= 2){
 						found = p;
 						break poss_loop;
 					}
@@ -99,7 +95,6 @@ public class AmbiguousSolver{
 				possibilities.remove(found);
 			} else {
 				groups.add(currentList);
-				//System.out.println("-> new group: "+currentList);
 				currentList = new ArrayList<>();
 				currentList.add(possibilities.remove(0));
 			}
@@ -107,23 +102,18 @@ public class AmbiguousSolver{
 
 		groups.add(currentList);
 		groups.sort((g1, g2) -> Integer.compare(g1.size(), g2.size()));
-		//System.out.println("-> last group: "+currentList);
-		//System.out.println("-> poss rn: "+possibilities);
-		System.out.println("Found "+groups.size()+" groups");
-		//System.out.println(": "+groups);
+
+		System.out.println("groups: "+groups+", "+groups.size());
 
 		boolean actionPerformed = false;
 		while (groups.size() > 0 && !actionPerformed){
 			ArrayList<Point2D> poss = groups.remove(0); // Smallest group
+			System.out.println("poss: "+poss+", "+poss.size());
 			ArrayList<Point2D> neighborCells = getValidAvailableCells(poss, availableCells);
 
-			walk(poss, neighborCells, 0, maps, minesAvailable, flagMap, 0);
-
-			System.out.format("Found %d maps\n", maps.size());
+			walk(poss, neighborCells, 0, maps, minesAvailable, flagMap);
 
 			double[] count = calculateProb(poss, maps);
-			System.out.println(java.util.Arrays.toString(count));
-
 			for (int i = 0; i < count.length; i++){
 				Point2D p = poss.get(i);
 				if (count[i] == 1){
@@ -134,6 +124,9 @@ public class AmbiguousSolver{
 					actionPerformed = true;
 				}
 			}
+
+			// DEBUG
+			System.out.println(java.util.Arrays.toString(count));
 		}
 
 		return actionPerformed;
@@ -188,7 +181,7 @@ public class AmbiguousSolver{
 		return count;
 	}
 
-	private void walk(ArrayList<Point2D> list, ArrayList<Point2D> availableCells, int index, ArrayList<int[][]> output, int minesAvailable, int[][] flagMap, int depth){
+	private void walk(ArrayList<Point2D> list, ArrayList<Point2D> availableCells, int index, ArrayList<int[][]> output, int minesAvailable, int[][] flagMap){
 		if (index == list.size()){
 			int[][] backup = backup();
 
@@ -203,21 +196,19 @@ public class AmbiguousSolver{
 
 			if (valid){
 				output.add(backup);
-				MainApplication.DEBUG_INFO = "Map found: "+output.size();
 			}
 
 			return;
 		}
 
 		Point2D pos = list.get(index);
-		MainApplication.DEBUG_INFO = String.format("Depth: %d (%d)\nIndex: %d", depth, list.size(), index);
 
 		// Try to use this flag
 		if (minesAvailable > 0 && isValid(this.world, flagMap, (int)pos.getX(), (int)pos.getY())){
 			this.world[(int)pos.getX()][(int)pos.getY()] = -2;
 			updateFlagMap(flagMap, (int)pos.getX(), (int)pos.getY(), 1);
 
-			walk(list, availableCells, index+1, output, minesAvailable-1, flagMap, depth+1);
+			walk(list, availableCells, index+1, output, minesAvailable-1, flagMap);
 
 			this.world[(int)pos.getX()][(int)pos.getY()] = -1;
 			updateFlagMap(flagMap, (int)pos.getX(), (int)pos.getY(), -1);
@@ -225,7 +216,7 @@ public class AmbiguousSolver{
 
 		// Try to not use this flag
 		if (isEmptyValid(world, flagMap, (int)pos.getX(), (int)pos.getY(), list, index+1)){
-			walk(list, availableCells, index+1, output, minesAvailable, flagMap, depth+1);
+			walk(list, availableCells, index+1, output, minesAvailable, flagMap);
 		}
 	}
 
@@ -337,20 +328,5 @@ public class AmbiguousSolver{
 		}
 
 		return false;
-	}
-
-	@Override
-	public String toString(){
-		StringBuilder builder = new StringBuilder();
-		for (int y = 0; y < this.world[0].length; y++){
-			for (int x = 0; x < this.world.length; x++){
-				int num = this.world[x][y];
-				if (num >= 0) builder.append(" ");
-				builder.append(" "+num);
-			}
-			builder.append("\n");
-		}
-
-		return builder.toString();
 	}
 }

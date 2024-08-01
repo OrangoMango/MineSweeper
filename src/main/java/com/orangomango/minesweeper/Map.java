@@ -19,16 +19,11 @@ public class Map{
 	}
 
 	public int buildMines(int x, int y){
-		// DEBUG
-		long seed = System.currentTimeMillis(); // 1722245027480L;
-		java.util.Random random = new java.util.Random(seed);
-		System.out.println("MAP_SEED: "+seed);
-
 		int count = 0;
 		for (int i = 0; i < this.w; i++){
 			for (int j = 0; j < this.h; j++){
 				if (!inArea(i, j, x, y)){
-					this.map[i][j].setMine(random.nextDouble() < 0.2);
+					this.map[i][j].setMine(Math.random() < 0.2);
 					if (this.map[i][j].isMine()){
 						count++;
 					}

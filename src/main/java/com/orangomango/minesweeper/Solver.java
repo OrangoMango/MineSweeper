@@ -8,8 +8,6 @@ import java.util.ArrayList;
 
 public class Solver{
 	private Map map;
-	// DEBUG
-	private boolean STOP = false;
 
 	public Solver(Map map){
 		this.map = map;
@@ -20,7 +18,6 @@ public class Solver{
 	}
 
 	public Point2D solveStep(int minesAvailable){
-		if (STOP) return new Point2D(0, -1);
 		int count = 0;
 		boolean actionPerformed = false;
 		int flagsRaised = 0;
@@ -50,11 +47,7 @@ public class Solver{
 		}
 
 		if (count == 0){
-			// DEBUG
-			long seed = System.currentTimeMillis(); // 1722245027457L;
-			Random random = new Random(seed);
-			System.out.println("SOLVER_SEED: "+seed);
-
+			Random random = new Random();
 			int rx = random.nextInt(this.map.getWidth());
 			int ry = random.nextInt(this.map.getHeight());
 			return new Point2D(rx, ry);
@@ -71,7 +64,7 @@ public class Solver{
 					}
 				}
 			} else {
-				System.out.println("NO :(");
+				System.out.println("Running AmbiguousSolver...");
 				AmbiguousSolver solver = new AmbiguousSolver(this.map);
 				boolean as = solver.solve(minesAvailable);
 
@@ -79,8 +72,6 @@ public class Solver{
 
 				if (!as) return null;
 			}
-
-			//STOP = true;
 		}
 
 		return new Point2D(flagsRaised, -1); // Small hack :)

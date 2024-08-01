@@ -31,7 +31,6 @@ public class MainApplication extends Application{
 	private int lastFlagX = -1, lastFlagY = -1;
 	private Solver solver;
 
-	public static volatile String DEBUG_INFO = "";
 	private static volatile boolean THREAD_RUNNING = false;
 
 	@Override
@@ -41,7 +40,7 @@ public class MainApplication extends Application{
 		GraphicsContext gc = canvas.getGraphicsContext2D();
 		pane.getChildren().add(canvas);
 
-		this.map = new Map(55, 55);
+		this.map = new Map(50, 50);
 		this.timer = new Display(50, 20, 3, -1);
 		this.mineCount = new Display(350, 20, 3, -1);
 
@@ -257,7 +256,7 @@ public class MainApplication extends Application{
 					new Thread(() -> {
 						while (THREAD_RUNNING){
 							try {
-								System.out.println("Running solver...");
+								System.out.println("Running Solver...");
 								Point2D rnd = this.solver.solveStep(this.totalMines);
 								if (rnd == null){
 									THREAD_RUNNING = false;
@@ -276,7 +275,7 @@ public class MainApplication extends Application{
 									}
 								}
 
-								Thread.sleep(250);
+								Thread.sleep(150);
 							} catch (InterruptedException ex){
 								ex.printStackTrace();
 							}
@@ -297,9 +296,6 @@ public class MainApplication extends Application{
 		gc.fillRect(0, 0, WIDTH, 120);
 		this.timer.render(gc);
 		this.mineCount.render(gc);
-
-		gc.setFill(Color.GREEN);
-		gc.fillText(DEBUG_INFO, 550, 30);
 	}
 
 	public static void main(String[] args){
