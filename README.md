@@ -4,6 +4,7 @@ Minesweeper implementation in Java with the JavaFX framework. (Solver included)
 # How to play
 * Right click to place a flag
 * Left click to open a cell
+* <kbd>R</kbd> to reset
 * <kbd>SPACE</kbd> to start the solver
 
 # Screenshots
